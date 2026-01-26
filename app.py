@@ -7,34 +7,21 @@ app = Flask(__name__)
 # --- CONFIGURATION ---
 SELLER_WHATSAPP = "213541099824" 
 
-# --- 1. SMART SHIPPING RATES (سعر التوصيل) ---
+# --- 1. SHIPPING RATES (Based on 58 Wilayas) ---
 SHIPPING_RATES = {
-    # ZONE 1: Algiers (The Capital)
-    "16": 400,
-
-    # ZONE 2: Coastal & Center (Standard ~500-600 DA)
+    "16": 400, # Algiers
     "9": 500, "2": 600, "42": 500, "35": 500, "15": 600, "6": 600, "19": 600, "25": 600, 
-    "31": 500, "13": 600, "21": 600, "23": 600, "46": 600, "27": 600, "44": 500, "10": 500, "26": 600,
-
-    # ZONE 3: Highlands & Interior (Standard ~700-800 DA)
-    "14": 700, "22": 700, "29": 700, "48": 700, "38": 700, "5": 700, "4": 700, "41": 700, "24": 700, "40": 700,
-    "43": 700, "34": 700, "28": 700, "17": 700, "20": 700, "32": 800, "45": 800, "7": 800, "51": 800,
-
-    # ZONE 4: South (Sahara) (~900-1200 DA)
-    "1": 1100, "3": 900, "8": 1000, "11": 1300, "12": 800, "30": 900, "33": 1300, "39": 900, "47": 900, 
-    "50": 1300, "52": 1100, "53": 1300, "54": 1400, "55": 900, "56": 1400, "57": 900, "58": 1000,
-    
-    # ZONE 5: New Wilayas (Estimates)
-    "59": 900, "60": 900, "61": 800, "62": 800, "63": 700, "64": 700, "65": 800, "66": 700, "67": 700, "68": 700, "69": 800
+    "31": 500, "13": 600, "21": 600, "23": 600, "46": 600, "27": 600, "44": 500, "10": 500,
+    "1": 1000, "3": 900, "8": 1000, "11": 1200, "30": 900, "33": 1200, "39": 900, "47": 900,
+    "50": 1200, "53": 1200, "54": 1200, "56": 1200, "58": 1000
 }
-
-# Fill the rest with a default of 700 DA if not specified above
+# Default rate for others
 for i in range(1, 70):
     code = str(i)
     if code not in SHIPPING_RATES:
         SHIPPING_RATES[code] = 700
 
-# --- 2. DATA: 69 Wilayas ---
+# --- 2. WILAYAS LIST ---
 WILAYAS = {
     "1":"أدرار", "2":"الشلف", "3":"الأغواط", "4":"أم البواقي", "5":"باتنة", "6":"بجاية", "7":"بسكرة", "8":"بشار", "9":"البليدة", "10":"البويرة",
     "11":"تمنراست", "12":"تبسة", "13":"تلمسان", "14":"تيارت", "15":"تيزي وزو", "16":"الجزائر", "17":"الجلفة", "18":"جيجل", "19":"سطيف", "20":"سعيدة",
@@ -45,7 +32,7 @@ WILAYAS = {
     "59":"آفلو", "60":"الابيض سيدي الشيخ", "61":"العريشة", "62":"القنطرة", "63":"بريكة", "64":"بوسعادة", "65":"بئر العاتر", "66":"قصر البخاري", "67":"قصر الشلالة", "68":"عين وسارة", "69":"مسعد"
 }
 
-# --- 3. DATA: HARDCODED COMMUNES ---
+# --- 3. COMMUNES ---
 RAW_COMMUNES = {
     "1": "أدرار,تامست,شاروين,رقان,إن زغمير,تيت,قصر قدور,تسabit,أقبلي,أولف,تيمقتن,فنوغيل,زاوية كنتة,بودة,أنزجمير",
     "2": "الشلف,تنس,بنايرية,الكريمية,تاوقريت,بني حواء,الصبحة,منزل,الوادى,اولاد فارس,الشطية,الابيض مجاجة,اولاد بن عبد القادر,تاجنة,الظهرة,المرسى,الحجاج,سيدي عكاشة,سيدي عبد الرحمن,بني راشد,مصدق,سيدي معروف,ام الدروع",
@@ -120,18 +107,10 @@ RAW_COMMUNES = {
 
 # --- 4. DATA PROCESSING ---
 LOCATIONS_DATA = {}
-
-def prepare_locations():
-    global LOCATIONS_DATA
-    for code, name in WILAYAS.items():
-        key = f"{code} - {name}"
-        if code in RAW_COMMUNES:
-            communes_list = RAW_COMMUNES[code].split(',')
-            LOCATIONS_DATA[key] = sorted(communes_list)
-        else:
-            LOCATIONS_DATA[key] = [] 
-
-prepare_locations()
+for code, name in WILAYAS.items():
+    key = f"{code} - {name}"
+    communes_list = RAW_COMMUNES.get(code, "").split(',')
+    LOCATIONS_DATA[key] = sorted(communes_list)
 
 # --- 5. FLASK APP & TEMPLATE ---
 HTML_TEMPLATE = """
@@ -312,7 +291,7 @@ HTML_TEMPLATE = """
                             </div>
                         </div>
 
-                        <div id="orderSummary" class="hidden bg-gray-50 p-4 rounded-xl border border-gray-200 mt-4 space-y-2 text-sm">
+                        <div id="orderSummary" class="bg-gray-50 p-4 rounded-xl border border-gray-200 mt-4 space-y-2 text-sm">
                             <div class="flex justify-between text-gray-600">
                                 <span>سعر المنتج:</span>
                                 <span id="productPriceDisplay" class="font-bold">3900 دج</span>
@@ -378,7 +357,6 @@ HTML_TEMPLATE = """
 
         function updateTotal() {
             const wilayaSelect = document.getElementById("wilaya");
-            const summaryBox = document.getElementById("orderSummary");
             
             // 1. Get Product Price
             // We find the checked radio button
@@ -386,7 +364,8 @@ HTML_TEMPLATE = """
             if (!selectedOfferInput) return; // Safety check
             
             const selectedOfferValue = selectedOfferInput.value;
-            const productPrice = prices[selectedOfferValue];
+            // Force Number conversion
+            const productPrice = Number(prices[selectedOfferValue] || 0);
 
             // 2. Get Shipping Price
             let shippingPrice = 0;
@@ -398,16 +377,14 @@ HTML_TEMPLATE = """
                 
                 // Lookup price (default to 700 if not found)
                 if (shippingRates[code]) {
-                    shippingPrice = parseInt(shippingRates[code]);
+                    // Force Number conversion
+                    shippingPrice = Number(shippingRates[code]);
                 } else {
                     shippingPrice = 700;
                 }
-                
-                // Show the summary box
-                summaryBox.classList.remove("hidden");
             }
 
-            // 3. Calculate Total
+            // 3. Calculate Total (Math Addition)
             total = productPrice + shippingPrice;
 
             // 4. Update the UI
@@ -419,7 +396,7 @@ HTML_TEMPLATE = """
                 // Update hidden input so backend gets the total
                 document.getElementById("final_total_input").value = total;
             } else {
-                document.getElementById("shippingPriceDisplay").innerText = "اختر الولاية لحساب التوصيل";
+                document.getElementById("shippingPriceDisplay").innerText = "اختر الولاية";
                 document.getElementById("totalPriceDisplay").innerText = "-- دج";
             }
         }
