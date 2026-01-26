@@ -286,5 +286,8 @@ def order():
     """
 
 if __name__ == '__main__':
-    # host='0.0.0.0' allows other devices on the same Wi-Fi to connect
-    app.run(debug=True, port=4300, host='0.0.0.0')
+    import os
+    # Get the PORT from Render, or use 4300 if running locally on your PC
+    port = int(os.environ.get('PORT', 4300))
+    # '0.0.0.0' is required for the server to be accessible externally
+    app.run(debug=False, host='0.0.0.0', port=port)
