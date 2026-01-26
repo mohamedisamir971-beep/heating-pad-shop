@@ -251,7 +251,7 @@ HTML_TEMPLATE = """
                                     <input type="radio" name="offer" value="2 Packs" class="w-5 h-5 text-brand focus:ring-brand">
                                     <span class="mr-2 font-semibold">حبتين (تخفيض)</span>
                                 </div>
-                                <span class="font-bold text-brand-dark">6,500 دج</span>
+                                <span class="font-bold text-brand-dark">7,400 دج</span>
                             </label>
                         </div>
 
@@ -369,4 +369,5 @@ def order():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 4300))
+
     app.run(debug=False, host='0.0.0.0', port=port)
