@@ -7,19 +7,25 @@ app = Flask(__name__)
 # --- CONFIGURATION ---
 SELLER_WHATSAPP = "213541099824" 
 
-# --- 1. SHIPPING RATES (سعر التوصيل) ---
-# I have set realistic defaults. You can change the numbers here.
-# Format: "Wilaya Code": Price_In_DZD
+# --- 1. SMART SHIPPING RATES (سعر التوصيل) ---
 SHIPPING_RATES = {
-    # Algiers (Cheapest)
+    # ZONE 1: Algiers (The Capital)
     "16": 400,
+
+    # ZONE 2: Coastal & Center (Standard ~500-600 DA)
+    "9": 500, "2": 600, "42": 500, "35": 500, "15": 600, "6": 600, "19": 600, "25": 600, 
+    "31": 500, "13": 600, "21": 600, "23": 600, "46": 600, "27": 600, "44": 500, "10": 500, "26": 600,
+
+    # ZONE 3: Highlands & Interior (Standard ~700-800 DA)
+    "14": 700, "22": 700, "29": 700, "48": 700, "38": 700, "5": 700, "4": 700, "41": 700, "24": 700, "40": 700,
+    "43": 700, "34": 700, "28": 700, "17": 700, "20": 700, "32": 800, "45": 800, "7": 800, "51": 800,
+
+    # ZONE 4: South (Sahara) (~900-1200 DA)
+    "1": 1100, "3": 900, "8": 1000, "11": 1300, "12": 800, "30": 900, "33": 1300, "39": 900, "47": 900, 
+    "50": 1300, "52": 1100, "53": 1300, "54": 1400, "55": 900, "56": 1400, "57": 900, "58": 1000,
     
-    # Coastal/North (Standard ~600DA)
-    "9": 600, "2": 600, "42": 600, "35": 600, "15": 600, "6": 600, "19": 600, "25": 600, "31": 600, "13": 600,
-    
-    # South/Far South (Expensive ~900-1200DA)
-    "1": 1000, "3": 900, "8": 1000, "11": 1200, "30": 900, "33": 1200, "39": 900, "47": 900, "50": 1200,
-    "53": 1200, "54": 1200, "56": 1200, "58": 1000
+    # ZONE 5: New Wilayas (Estimates)
+    "59": 900, "60": 900, "61": 800, "62": 800, "63": 700, "64": 700, "65": 800, "66": 700, "67": 700, "68": 700, "69": 800
 }
 
 # Fill the rest with a default of 700 DA if not specified above
@@ -269,9 +275,9 @@ HTML_TEMPLATE = """
                             <label class="flex items-center justify-between cursor-pointer">
                                 <div class="flex items-center">
                                     <input type="radio" name="offer" value="2 Packs" class="w-5 h-5 text-brand focus:ring-brand" onchange="updateTotal()">
-                                    <span class="mr-2 font-semibold">حبتين (تخفيض)</span>
+                                    <span class="mr-2 font-semibold">قطعتين (تخفيض)</span>
                                 </div>
-                                <span class="font-bold text-brand-dark">7,5400 دج</span>
+                                <span class="font-bold text-brand-dark">6,500 دج</span>
                             </label>
                         </div>
 
@@ -313,7 +319,7 @@ HTML_TEMPLATE = """
                             </div>
                             <div class="flex justify-between text-gray-600">
                                 <span>سعر التوصيل:</span>
-                                <span id="shippingPriceDisplay" class="font-bold">-- دج</span>
+                                <span id="shippingPriceDisplay" class="font-bold text-green-600">-- دج</span>
                             </div>
                             <div class="border-t border-gray-200 pt-2 flex justify-between text-brand-dark text-lg font-bold">
                                 <span>المجموع الكلي:</span>
@@ -336,7 +342,7 @@ HTML_TEMPLATE = """
         const locations = {{ locations | tojson }};
         const shippingRates = {{ shipping_rates | tojson }};
         
-        // Prices matching the Radio Buttons above
+        // Define product prices numerically for calculation
         const prices = {
             "1 Pack": 3900,
             "2 Packs": 6500
@@ -351,7 +357,7 @@ HTML_TEMPLATE = """
             const communeSelect = document.getElementById("commune");
             const selectedWilaya = wilayaSelect.value;
             
-            // 1. Logic for Communes
+            // 1. Reset and Populate Communes
             communeSelect.innerHTML = '<option value="">اختر البلدية</option>';
             communeSelect.disabled = false;
 
@@ -366,7 +372,7 @@ HTML_TEMPLATE = """
                 communeSelect.disabled = true;
             }
 
-            // 2. Trigger Price Calculation
+            // 2. Recalculate Totals based on new location
             updateTotal();
         }
 
@@ -374,34 +380,46 @@ HTML_TEMPLATE = """
             const wilayaSelect = document.getElementById("wilaya");
             const summaryBox = document.getElementById("orderSummary");
             
-            // Get selected product price
-            const selectedOffer = document.querySelector('input[name="offer"]:checked').value;
-            const productPrice = prices[selectedOffer];
+            // 1. Get Product Price
+            // We find the checked radio button
+            const selectedOfferInput = document.querySelector('input[name="offer"]:checked');
+            if (!selectedOfferInput) return; // Safety check
+            
+            const selectedOfferValue = selectedOfferInput.value;
+            const productPrice = prices[selectedOfferValue];
 
-            // Get shipping price
+            // 2. Get Shipping Price
             let shippingPrice = 0;
+            let total = 0;
+
             if (wilayaSelect.value) {
-                // Extract code (e.g., "16" from "16 - Alger")
+                // Extract the code (e.g. "16" from "16 - Alger")
                 const code = wilayaSelect.value.split(" - ")[0];
-                shippingPrice = shippingRates[code] || 700; // Default 700 if error
                 
-                // Show the box if hidden
+                // Lookup price (default to 700 if not found)
+                if (shippingRates[code]) {
+                    shippingPrice = parseInt(shippingRates[code]);
+                } else {
+                    shippingPrice = 700;
+                }
+                
+                // Show the summary box
                 summaryBox.classList.remove("hidden");
             }
 
-            // Calculate Total
-            const total = productPrice + shippingPrice;
+            // 3. Calculate Total
+            total = productPrice + shippingPrice;
 
-            // Update UI
+            // 4. Update the UI
             document.getElementById("productPriceDisplay").innerText = productPrice + " دج";
             
             if (shippingPrice > 0) {
                 document.getElementById("shippingPriceDisplay").innerText = shippingPrice + " دج";
                 document.getElementById("totalPriceDisplay").innerText = total + " دج";
-                // Update hidden input for server
+                // Update hidden input so backend gets the total
                 document.getElementById("final_total_input").value = total;
             } else {
-                document.getElementById("shippingPriceDisplay").innerText = "اختر الولاية";
+                document.getElementById("shippingPriceDisplay").innerText = "اختر الولاية لحساب التوصيل";
                 document.getElementById("totalPriceDisplay").innerText = "-- دج";
             }
         }
@@ -412,7 +430,7 @@ HTML_TEMPLATE = """
 
 @app.route('/', methods=['GET'])
 def index():
-    # Pass Shipping Rates to HTML
+    # Pass Shipping Rates to the template
     return render_template_string(HTML_TEMPLATE, locations=LOCATIONS_DATA, seller_phone=SELLER_WHATSAPP, shipping_rates=SHIPPING_RATES)
 
 @app.route('/order', methods=['POST'])
@@ -427,8 +445,8 @@ def order():
     # Get the calculated total from the hidden input
     final_total = data.get('final_total')
 
-    # Construct WhatsApp URL with Total Price
-    msg = f"سلام عليكم، أريد تأكيد طلبي:%0A👤 الاسم: {fullname}%0A📞 الهاتف: {phone}%0A📍 العنوان: {wilaya} - {commune}%0A📦 العرض: {offer}%0A💰 المجموع الكلي (مع التوصيل): {final_total} دج"
+    # WhatsApp Message
+    msg = f"سلام عليكم، أريد تأكيد طلبي:%0A👤 الاسم: {fullname}%0A📞 الهاتف: {phone}%0A📍 العنوان: {wilaya} - {commune}%0A📦 العرض: {offer}%0A💰 المجموع الكلي: {final_total} دج"
     wa_link = f"https://wa.me/{SELLER_WHATSAPP}?text={msg}"
 
     return f"""
@@ -443,7 +461,7 @@ def order():
         <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md mx-4">
             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🎉</div>
             <h1 class="text-2xl font-bold text-gray-800 mb-2">شكراً لك، {fullname}!</h1>
-            <p class="text-gray-600 mb-6">تم تسجيل طلبك بقيمة إجمالية <strong>{final_total} دج</strong>.</p>
+            <p class="text-gray-600 mb-6">تم تسجيل طلبك بقيمة <strong>{final_total} دج</strong>. لتسريع عملية التوصيل، يرجى تأكيد العنوان عبر واتساب.</p>
             
             <a href="{wa_link}" class="block w-full bg-[#25D366] hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:scale-105 flex items-center justify-center gap-2">
                 <span>تأكيد الطلب عبر واتساب</span>
