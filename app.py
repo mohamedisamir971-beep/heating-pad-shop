@@ -1,4 +1,5 @@
 import json
+import os
 from flask import Flask, render_template_string, request
 
 app = Flask(__name__)
@@ -14,8 +15,7 @@ WILAYAS = {
     "59":"آفلو", "60":"الابيض سيدي الشيخ", "61":"العريشة", "62":"القنطرة", "63":"بريكة", "64":"بوسعادة", "65":"بئر العاتر", "66":"قصر البخاري", "67":"قصر الشلالة", "68":"عين وسارة", "69":"مسعد"
 }
 
-# --- 2. DATA: HARDCODED COMMUNES (Compressed for Reliability) ---
-# Format: "WilayaCode": "Commune1,Commune2,Commune3..."
+# --- 2. DATA: HARDCODED COMMUNES (Compressed) ---
 RAW_COMMUNES = {
     "1": "أدرار,تامست,شاروين,رقان,إن زغمير,تيت,قصر قدور,تسabit,أقبلي,أولف,تيمقتن,فنوغيل,زاوية كنتة,بودة,أنزجمير",
     "2": "الشلف,تنس,بنايرية,الكريمية,تاوقريت,بني حواء,الصبحة,منزل,الوادى,اولاد فارس,الشطية,الابيض مجاجة,اولاد بن عبد القادر,تاجنة,الظهرة,المرسى,الحجاج,سيدي عكاشة,سيدي عبد الرحمن,بني راشد,مصدق,سيدي معروف,ام الدروع",
@@ -37,7 +37,7 @@ RAW_COMMUNES = {
     "18": "جيجل,الطاهير,الميلية,العنصر,الجمعة بني حبيبي,الشقفة,العوانة,زيامة منصورية,سيدي عبد العزيز,قاول,بوراوي بلهادف,وجانة,سطارة,جيملة,إيراقن سويسي",
     "19": "سطيف,العلمة,عين ولمان,عين أرنات,عين آزال,عين الكبيرة,بوقاعة,جميلة,صالح باي,عموشة,بني عزيز,بابور,حمّام السخنة,ماوكلان,عين السبت,ذراع قائد,تالة إيفاسن",
     "20": "سعيدة,عين الحجر,يوب,سيدي بوبكر,أولاد إبراهيم,الحساسنة,مولاي لعربي,سيدي عمار,عين السلطان,تيرسين,هونت",
-    "21": "سكيكدة,القل,عزابة,الحروش,تمالوس,رمضان جمال,بن عزوز,عين قشرة,أم الطوب,الحدائق,حمادي كرومة,فلفلة,بني زيد,الزيتونة,كركرة,بني بشير",
+    "21": "سكيكدة,القل,عزابة,الحروش,تمالوس,رمضان جمال,بن عزوز,عين قشرة,أم الطوب,الحدائق,حمادي كرومة,felfela,بني زيد,الزيتونة,كركرة,بني بشير",
     "22": "سيدي بلعباس,سفيزف,بن باديس,تلاغ,تنيرة,رأس الماء,عين البرد,سيدي لحسن,سيدي علي بوسيدي,مرحوم,مولاي سليسن,بوخنفيس,تسالة,مصطفى بن ابراهيم,سيدي ابراهيم",
     "23": "عنابة,البوني,الحجار,سيدي عمار,برحال,التريعات,العلمة,الشرفة,واد العنب,سرايدي,شطايبي",
     "24": "قالمة,وادي الزناتي,هيليوبوليس,بوشقوف,عين مخلوف,حمام دباغ,لخزارة,بومهرة أحمد,بلخير,عين العربي,تاملوكة,الركنية,سلاوة عنونة,عين رقادة,بوحشانة",
@@ -96,15 +96,13 @@ def prepare_locations():
     global LOCATIONS_DATA
     for code, name in WILAYAS.items():
         key = f"{code} - {name}"
-        # Get communes from raw string, split by comma
         if code in RAW_COMMUNES:
             communes_list = RAW_COMMUNES[code].split(',')
             LOCATIONS_DATA[key] = sorted(communes_list)
         else:
-            LOCATIONS_DATA[key] = [] # Should not happen as all are covered
+            LOCATIONS_DATA[key] = [] 
 
 prepare_locations()
-
 
 # --- 4. FLASK APP & TEMPLATE ---
 HTML_TEMPLATE = """
@@ -113,10 +111,10 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بينك كومفورت - طلب المنتج</title>
+    <title>بينك كومفورت - الحل المثالي</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
@@ -148,26 +146,71 @@ HTML_TEMPLATE = """
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             
             <div class="space-y-8">
-                <div class="rounded-3xl overflow-hidden shadow-lg border border-brand-light bg-white relative group">
-                    <img src="https://placehold.co/800x800/FCE7F3/EC4899?text=Heating+Pad+Device" 
-                         alt="وسادة التدفئة" class="w-full h-auto transform transition hover:scale-105">
-                    <div class="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-4 py-2 rounded-lg text-sm font-bold text-brand-dark shadow-sm">
-                        ⭐ 4.9/5
+                
+                <div class="space-y-4">
+                    <div class="rounded-3xl overflow-hidden shadow-lg border border-brand-light bg-white relative group">
+                        <img id="mainImage" src="https://i.ibb.co/LD7XbbQf/61-Vin54-V0-HL-AC-SX679.jpg" 
+                             alt="وسادة التدفئة" class="w-full h-auto object-cover transform transition">
+                        
+                        <div class="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-4 py-2 rounded-lg text-sm font-bold text-brand-dark shadow-sm">
+                            ⭐ 4.9/5
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="changeImage('https://i.ibb.co/LD7XbbQf/61-Vin54-V0-HL-AC-SX679.jpg')" class="border-2 border-brand rounded-xl overflow-hidden hover:opacity-75 transition">
+                            <img src="https://i.ibb.co/LD7XbbQf/61-Vin54-V0-HL-AC-SX679.jpg" class="w-full object-cover aspect-square">
+                        </button>
+                        
+                        <button onclick="changeImage('https://i.ibb.co/Kjvg7KRg/heating-pad-period.webp')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
+                            <img src="https://i.ibb.co/Kjvg7KRg/heating-pad-period.webp" class="w-full object-cover aspect-square">
+                        </button>
+                        
+                        <button onclick="changeImage('https://i.ibb.co/LD7XbbQf/61-Vin54-V0-HL-AC-SX679.jpg')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
+                            <img src="https://i.ibb.co/LD7XbbQf/61-Vin54-V0-HL-AC-SX679.jpg" class="w-full object-cover aspect-square opacity-70">
+                        </button>
+                        
+                        <button onclick="changeImage('https://i.ibb.co/Kjvg7KRg/heating-pad-period.webp')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
+                            <img src="https://i.ibb.co/Kjvg7KRg/heating-pad-period.webp" class="w-full object-cover aspect-square opacity-70">
+                        </button>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-4">
-                    <div class="bg-white p-4 rounded-xl text-center shadow-sm border border-gray-100">
-                        <div class="text-3xl text-brand mb-2"><i class="fas fa-wave-square"></i></div>
-                        <h3 class="font-bold text-sm">اهتزاز وتدليك</h3>
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                    <h2 class="text-2xl font-black text-brand-dark leading-tight">
+                        💗 تعانين كل شهر من آلام الدورة؟
+                    </h2>
+                    <p class="text-lg text-gray-600 font-medium">
+                        تشنجات مزعجة وآلام أسفل الظهر تفسد يومك؟
+                    </p>
+                    
+                    <div class="bg-brand-light/30 p-4 rounded-xl border border-brand-light">
+                        <p class="font-bold text-brand-dark mb-3 text-lg">
+                            ✨ وسادة التدفئة والتدليك الذكية تمنحك راحة فورية من أول استعمال:
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <span class="text-brand mt-1 ml-2"><i class="fas fa-check-circle"></i></span>
+                                <span class="font-semibold text-gray-700">تخفف آلام الحيض بشكل ملحوظ</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-brand mt-1 ml-2"><i class="fas fa-fire"></i></span>
+                                <span class="font-semibold text-gray-700">تدفئة عميقة + تدليك مهدّئ (3 مستويات)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-brand mt-1 ml-2"><i class="fas fa-battery-full"></i></span>
+                                <span class="font-semibold text-gray-700">لاسلكية، خفيفة وسهلة الحمل أينما ذهبت</span>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="bg-white p-4 rounded-xl text-center shadow-sm border border-gray-100">
-                        <div class="text-3xl text-brand mb-2"><i class="fas fa-temperature-high"></i></div>
-                        <h3 class="font-bold text-sm">تسخين فوري</h3>
+
+                    <div class="flex items-center justify-between text-sm text-gray-500 pt-2 border-t border-gray-100">
+                        <span><i class="fas fa-box ml-1"></i> الدفع عند الاستلام</span>
+                        <span><i class="fas fa-shield-alt ml-1"></i> ضمان الرضا</span>
                     </div>
-                    <div class="bg-white p-4 rounded-xl text-center shadow-sm border border-gray-100">
-                        <div class="text-3xl text-brand mb-2"><i class="fas fa-battery-full"></i></div>
-                        <h3 class="font-bold text-sm">بطارية طويلة</h3>
+
+                    <div class="text-center font-bold text-brand animate-pulse mt-2">
+                        👉 اطلبِيها الآن وارتاحي كل شهر
                     </div>
                 </div>
             </div>
@@ -240,6 +283,11 @@ HTML_TEMPLATE = """
     <script>
         const locations = {{ locations | tojson }};
 
+        // Function to handle the gallery switch
+        function changeImage(src) {
+            document.getElementById('mainImage').src = src;
+        }
+
         function loadCommunes() {
             const wilayaSelect = document.getElementById("wilaya");
             const communeSelect = document.getElementById("commune");
@@ -286,8 +334,6 @@ def order():
     """
 
 if __name__ == '__main__':
-    import os
-    # Get the PORT from Render, or use 4300 if running locally on your PC
+    # PORT FIX for Render
     port = int(os.environ.get('PORT', 4300))
-    # '0.0.0.0' is required for the server to be accessible externally
     app.run(debug=False, host='0.0.0.0', port=port)
