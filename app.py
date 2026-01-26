@@ -4,7 +4,10 @@ from flask import Flask, render_template_string, request
 
 app = Flask(__name__)
 
-# --- 1. DATA: 69 Wilayas of Algeria ---
+# --- CONFIGURATION: YOUR WHATSAPP NUMBER ---
+SELLER_WHATSAPP = "213541099824" 
+
+# --- 1. DATA: 69 Wilayas ---
 WILAYAS = {
     "1":"أدرار", "2":"الشلف", "3":"الأغواط", "4":"أم البواقي", "5":"باتنة", "6":"بجاية", "7":"بسكرة", "8":"بشار", "9":"البليدة", "10":"البويرة",
     "11":"تمنراست", "12":"تبسة", "13":"تلمسان", "14":"تيارت", "15":"تيزي وزو", "16":"الجزائر", "17":"الجلفة", "18":"جيجل", "19":"سطيف", "20":"سعيدة",
@@ -15,7 +18,7 @@ WILAYAS = {
     "59":"آفلو", "60":"الابيض سيدي الشيخ", "61":"العريشة", "62":"القنطرة", "63":"بريكة", "64":"بوسعادة", "65":"بئر العاتر", "66":"قصر البخاري", "67":"قصر الشلالة", "68":"عين وسارة", "69":"مسعد"
 }
 
-# --- 2. DATA: HARDCODED COMMUNES (Compressed) ---
+# --- 2. DATA: HARDCODED COMMUNES ---
 RAW_COMMUNES = {
     "1": "أدرار,تامست,شاروين,رقان,إن زغمير,تيت,قصر قدور,تسabit,أقبلي,أولف,تيمقتن,فنوغيل,زاوية كنتة,بودة,أنزجمير",
     "2": "الشلف,تنس,بنايرية,الكريمية,تاوقريت,بني حواء,الصبحة,منزل,الوادى,اولاد فارس,الشطية,الابيض مجاجة,اولاد بن عبد القادر,تاجنة,الظهرة,المرسى,الحجاج,سيدي عكاشة,سيدي عبد الرحمن,بني راشد,مصدق,سيدي معروف,ام الدروع",
@@ -122,7 +125,8 @@ HTML_TEMPLATE = """
                 extend: {
                     fontFamily: { sans: ['Cairo', 'sans-serif'] },
                     colors: {
-                        brand: { light: '#FCE7F3', DEFAULT: '#EC4899', dark: '#831843', grey: '#374151' }
+                        brand: { light: '#FCE7F3', DEFAULT: '#EC4899', dark: '#831843', grey: '#374151' },
+                        whatsapp: '#25D366'
                     }
                 }
             }
@@ -130,6 +134,11 @@ HTML_TEMPLATE = """
     </script>
 </head>
 <body class="bg-gray-50 text-brand-grey font-sans antialiased">
+
+    <a href="https://wa.me/{{ seller_phone }}" target="_blank" 
+       class="fixed bottom-6 left-6 z-50 bg-whatsapp hover:bg-green-600 text-white p-4 rounded-full shadow-2xl transition transform hover:scale-110 flex items-center gap-2">
+        <i class="fab fa-whatsapp text-3xl"></i>
+    </a>
 
     <nav class="bg-white shadow-sm py-4 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
@@ -149,7 +158,7 @@ HTML_TEMPLATE = """
                 
                 <div class="space-y-4">
                     <div class="rounded-3xl overflow-hidden shadow-lg border border-brand-light bg-white relative group">
-                        <img id="mainImage" src="https://i.ibb.co/LD7XbbQf/61-Vin54-V0-HL-AC-SX679.jpg" 
+                        <img id="mainImage" src="https://i.ibb.co/4R8MwySb/Whats-App-Image-2026-01-26-at-17-34-44-1.jpg" 
                              alt="وسادة التدفئة" class="w-full h-auto object-cover transform transition">
                         
                         <div class="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-4 py-2 rounded-lg text-sm font-bold text-brand-dark shadow-sm">
@@ -157,21 +166,24 @@ HTML_TEMPLATE = """
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-4 gap-2">
-                        <button onclick="changeImage('https://i.ibb.co/LD7XbbQf/61-Vin54-V0-HL-AC-SX679.jpg')" class="border-2 border-brand rounded-xl overflow-hidden hover:opacity-75 transition">
-                            <img src="https://i.ibb.co/LD7XbbQf/61-Vin54-V0-HL-AC-SX679.jpg" class="w-full object-cover aspect-square">
+                    <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
+                        <button onclick="changeImage('https://i.ibb.co/4R8MwySb/Whats-App-Image-2026-01-26-at-17-34-44-1.jpg')" class="border-2 border-brand rounded-xl overflow-hidden hover:opacity-75 transition">
+                            <img src="https://i.ibb.co/4R8MwySb/Whats-App-Image-2026-01-26-at-17-34-44-1.jpg" class="w-full object-cover aspect-square">
                         </button>
-                        
-                        <button onclick="changeImage('https://i.ibb.co/Kjvg7KRg/heating-pad-period.webp')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
-                            <img src="https://i.ibb.co/Kjvg7KRg/heating-pad-period.webp" class="w-full object-cover aspect-square">
+                        <button onclick="changeImage('https://i.ibb.co/7tKKM2Wn/Whats-App-Image-2026-01-26-at-17-34-44.jpg')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
+                            <img src="https://i.ibb.co/7tKKM2Wn/Whats-App-Image-2026-01-26-at-17-34-44.jpg" class="w-full object-cover aspect-square">
                         </button>
-                        
-                        <button onclick="changeImage('https://i.ibb.co/LD7XbbQf/61-Vin54-V0-HL-AC-SX679.jpg')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
-                            <img src="https://i.ibb.co/LD7XbbQf/61-Vin54-V0-HL-AC-SX679.jpg" class="w-full object-cover aspect-square opacity-70">
+                        <button onclick="changeImage('https://i.ibb.co/Kxhc6kP8/Whats-App-Image-2026-01-26-at-17-35-39.jpg')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
+                            <img src="https://i.ibb.co/Kxhc6kP8/Whats-App-Image-2026-01-26-at-17-35-39.jpg" class="w-full object-cover aspect-square">
                         </button>
-                        
-                        <button onclick="changeImage('https://i.ibb.co/Kjvg7KRg/heating-pad-period.webp')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
-                            <img src="https://i.ibb.co/Kjvg7KRg/heating-pad-period.webp" class="w-full object-cover aspect-square opacity-70">
+                        <button onclick="changeImage('https://i.ibb.co/WpYpdw7x/Whats-App-Image-2026-01-26-at-17-35-40-1.jpg')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
+                            <img src="https://i.ibb.co/WpYpdw7x/Whats-App-Image-2026-01-26-at-17-35-40-1.jpg" class="w-full object-cover aspect-square">
+                        </button>
+                        <button onclick="changeImage('https://i.ibb.co/Pv7rkY0c/Whats-App-Image-2026-01-26-at-17-35-40.jpg')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
+                            <img src="https://i.ibb.co/Pv7rkY0c/Whats-App-Image-2026-01-26-at-17-35-40.jpg" class="w-full object-cover aspect-square">
+                        </button>
+                        <button onclick="changeImage('https://i.ibb.co/pG04PYs/Whats-App-Image-2026-01-26-at-17-35-41.jpg')" class="border-2 border-transparent rounded-xl overflow-hidden hover:opacity-75 transition">
+                            <img src="https://i.ibb.co/pG04PYs/Whats-App-Image-2026-01-26-at-17-35-41.jpg" class="w-full object-cover aspect-square">
                         </button>
                     </div>
                 </div>
@@ -195,11 +207,11 @@ HTML_TEMPLATE = """
                             </li>
                             <li class="flex items-start">
                                 <span class="text-brand mt-1 ml-2"><i class="fas fa-fire"></i></span>
-                                <span class="font-semibold text-gray-700">تدفئة عميقة + تدليك مهدّئ (3 مستويات)</span>
+                                <span class="font-semibold text-gray-700">تدفئة عميقة + تدليك مهدّئ</span>
                             </li>
                             <li class="flex items-start">
                                 <span class="text-brand mt-1 ml-2"><i class="fas fa-battery-full"></i></span>
-                                <span class="font-semibold text-gray-700">لاسلكية، خفيفة وسهلة الحمل أينما ذهبت</span>
+                                <span class="font-semibold text-gray-700">لاسلكية، خفيفة وسهلة الحمل</span>
                             </li>
                         </ul>
                     </div>
@@ -208,20 +220,23 @@ HTML_TEMPLATE = """
                         <span><i class="fas fa-box ml-1"></i> الدفع عند الاستلام</span>
                         <span><i class="fas fa-shield-alt ml-1"></i> ضمان الرضا</span>
                     </div>
-
-                    <div class="text-center font-bold text-brand animate-pulse mt-2">
-                        👉 اطلبِيها الآن وارتاحي كل شهر
-                    </div>
                 </div>
             </div>
 
             <div class="sticky top-24">
                 <div class="bg-white rounded-2xl shadow-xl border border-brand-light p-6 md:p-8 relative">
+                    
+                    <div class="bg-red-50 border border-red-100 rounded-lg p-3 mb-4 flex justify-between items-center animate-pulse">
+                        <span class="text-red-600 font-bold text-sm flex items-center">
+                            <i class="fas fa-fire mr-2"></i> الكمية محدودة
+                        </span>
+                        <span class="text-red-600 font-extrabold text-sm">اغتنمي الفرصة الأن!</span>
+                    </div>
+
                     <h2 class="text-2xl font-bold text-brand-dark mb-1">اطلب الآن والدفع عند الاستلام</h2>
                     <p class="text-sm text-gray-500 mb-6">املأ المعلومات بعناية لضمان وصول الطلب.</p>
 
                     <form action="/order" method="POST" class="space-y-4">
-                        
                         <div class="bg-brand-light/30 p-4 rounded-xl border border-brand-light mb-6">
                             <label class="flex items-center justify-between cursor-pointer mb-3">
                                 <div class="flex items-center">
@@ -242,13 +257,13 @@ HTML_TEMPLATE = """
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل</label>
-                            <input type="text" name="fullname" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand-light outline-none">
+                            <input type="text" name="fullname" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand">
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف</label>
                             <input type="tel" name="phone" required dir="ltr" style="text-align:right" placeholder="05 XX XX XX XX" 
-                                class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand-light outline-none">
+                                class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand">
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
@@ -265,7 +280,7 @@ HTML_TEMPLATE = """
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">البلدية</label>
                                 <select id="commune" name="commune" required disabled 
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand bg-white disabled:bg-gray-100 text-gray-500">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand bg-white disabled:bg-gray-100">
                                     <option value="">اختر الولاية أولاً</option>
                                 </select>
                             </div>
@@ -283,7 +298,6 @@ HTML_TEMPLATE = """
     <script>
         const locations = {{ locations | tojson }};
 
-        // Function to handle the gallery switch
         function changeImage(src) {
             document.getElementById('mainImage').src = src;
         }
@@ -292,14 +306,10 @@ HTML_TEMPLATE = """
             const wilayaSelect = document.getElementById("wilaya");
             const communeSelect = document.getElementById("commune");
             const selectedWilaya = wilayaSelect.value;
-
-            // Reset Commune Dropdown
             communeSelect.innerHTML = '<option value="">اختر البلدية</option>';
             communeSelect.disabled = false;
-            communeSelect.classList.remove("text-gray-500");
 
             if (selectedWilaya && locations[selectedWilaya]) {
-                // Populate Communes
                 locations[selectedWilaya].sort().forEach(commune => {
                     const option = document.createElement("option");
                     option.value = commune;
@@ -317,23 +327,46 @@ HTML_TEMPLATE = """
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template_string(HTML_TEMPLATE, locations=LOCATIONS_DATA)
+    return render_template_string(HTML_TEMPLATE, locations=LOCATIONS_DATA, seller_phone=SELLER_WHATSAPP)
 
 @app.route('/order', methods=['POST'])
 def order():
     data = request.form
-    print(f"💰 New Order: {data.get('fullname')} | {data.get('phone')} | {data.get('wilaya')} - {data.get('commune')}")
-    
+    fullname = data.get('fullname')
+    phone = data.get('phone')
+    wilaya = data.get('wilaya')
+    commune = data.get('commune')
+    offer = data.get('offer')
+
+    # Construct WhatsApp URL
+    msg = f"سلام عليكم، أريد تأكيد طلبي:%0A👤 الاسم: {fullname}%0A📞 الهاتف: {phone}%0A📍 العنوان: {wilaya} - {commune}%0A📦 العرض: {offer}"
+    wa_link = f"https://wa.me/{SELLER_WHATSAPP}?text={msg}"
+
     return f"""
-    <div dir="rtl" style="font-family: 'Cairo'; text-align: center; padding: 50px;">
-        <h1 style="color: #EC4899;">شكراً لك!</h1>
-        <p>تم استلام طلبك بنجاح.</p>
-        <p>سنتصل بك على الرقم <strong>{data.get('phone')}</strong> قريباً.</p>
-        <a href="/">العودة</a>
-    </div>
+    <html dir="rtl">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    </head>
+    <body class="bg-gray-50 flex items-center justify-center min-h-screen font-[Cairo]">
+        <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md mx-4">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🎉</div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">شكراً لك، {fullname}!</h1>
+            <p class="text-gray-600 mb-6">تم تسجيل طلبك. لتسريع عملية التوصيل، يرجى تأكيد العنوان عبر واتساب.</p>
+            
+            <a href="{wa_link}" class="block w-full bg-[#25D366] hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:scale-105 flex items-center justify-center gap-2">
+                <span>تأكيد الطلب عبر واتساب</span>
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            </a>
+            
+            <a href="/" class="block mt-4 text-gray-400 text-sm">العودة للصفحة الرئيسية</a>
+        </div>
+    </body>
+    </html>
     """
 
 if __name__ == '__main__':
-    # PORT FIX for Render
     port = int(os.environ.get('PORT', 4300))
     app.run(debug=False, host='0.0.0.0', port=port)
