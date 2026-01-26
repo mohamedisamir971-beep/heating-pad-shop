@@ -4,10 +4,31 @@ from flask import Flask, render_template_string, request
 
 app = Flask(__name__)
 
-# --- CONFIGURATION: YOUR WHATSAPP NUMBER ---
+# --- CONFIGURATION ---
 SELLER_WHATSAPP = "213541099824" 
 
-# --- 1. DATA: 69 Wilayas ---
+# --- 1. SHIPPING RATES (سعر التوصيل) ---
+# I have set realistic defaults. You can change the numbers here.
+# Format: "Wilaya Code": Price_In_DZD
+SHIPPING_RATES = {
+    # Algiers (Cheapest)
+    "16": 400,
+    
+    # Coastal/North (Standard ~600DA)
+    "9": 600, "2": 600, "42": 600, "35": 600, "15": 600, "6": 600, "19": 600, "25": 600, "31": 600, "13": 600,
+    
+    # South/Far South (Expensive ~900-1200DA)
+    "1": 1000, "3": 900, "8": 1000, "11": 1200, "30": 900, "33": 1200, "39": 900, "47": 900, "50": 1200,
+    "53": 1200, "54": 1200, "56": 1200, "58": 1000
+}
+
+# Fill the rest with a default of 700 DA if not specified above
+for i in range(1, 70):
+    code = str(i)
+    if code not in SHIPPING_RATES:
+        SHIPPING_RATES[code] = 700
+
+# --- 2. DATA: 69 Wilayas ---
 WILAYAS = {
     "1":"أدرار", "2":"الشلف", "3":"الأغواط", "4":"أم البواقي", "5":"باتنة", "6":"بجاية", "7":"بسكرة", "8":"بشار", "9":"البليدة", "10":"البويرة",
     "11":"تمنراست", "12":"تبسة", "13":"تلمسان", "14":"تيارت", "15":"تيزي وزو", "16":"الجزائر", "17":"الجلفة", "18":"جيجل", "19":"سطيف", "20":"سعيدة",
@@ -18,7 +39,7 @@ WILAYAS = {
     "59":"آفلو", "60":"الابيض سيدي الشيخ", "61":"العريشة", "62":"القنطرة", "63":"بريكة", "64":"بوسعادة", "65":"بئر العاتر", "66":"قصر البخاري", "67":"قصر الشلالة", "68":"عين وسارة", "69":"مسعد"
 }
 
-# --- 2. DATA: HARDCODED COMMUNES ---
+# --- 3. DATA: HARDCODED COMMUNES ---
 RAW_COMMUNES = {
     "1": "أدرار,تامست,شاروين,رقان,إن زغمير,تيت,قصر قدور,تسabit,أقبلي,أولف,تيمقتن,فنوغيل,زاوية كنتة,بودة,أنزجمير",
     "2": "الشلف,تنس,بنايرية,الكريمية,تاوقريت,بني حواء,الصبحة,منزل,الوادى,اولاد فارس,الشطية,الابيض مجاجة,اولاد بن عبد القادر,تاجنة,الظهرة,المرسى,الحجاج,سيدي عكاشة,سيدي عبد الرحمن,بني راشد,مصدق,سيدي معروف,ام الدروع",
@@ -91,11 +112,10 @@ RAW_COMMUNES = {
     "69": "مسعد,دلدول,سلمانة,سد الرحال,قطارة"
 }
 
-# --- 3. DATA PROCESSING ---
+# --- 4. DATA PROCESSING ---
 LOCATIONS_DATA = {}
 
 def prepare_locations():
-    """Converts the compressed raw string data into the list format needed for the dropdowns"""
     global LOCATIONS_DATA
     for code, name in WILAYAS.items():
         key = f"{code} - {name}"
@@ -107,7 +127,7 @@ def prepare_locations():
 
 prepare_locations()
 
-# --- 4. FLASK APP & TEMPLATE ---
+# --- 5. FLASK APP & TEMPLATE ---
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -240,7 +260,7 @@ HTML_TEMPLATE = """
                         <div class="bg-brand-light/30 p-4 rounded-xl border border-brand-light mb-6">
                             <label class="flex items-center justify-between cursor-pointer mb-3">
                                 <div class="flex items-center">
-                                    <input type="radio" name="offer" value="1 Pack" class="w-5 h-5 text-brand focus:ring-brand" checked>
+                                    <input type="radio" name="offer" value="1 Pack" class="w-5 h-5 text-brand focus:ring-brand" checked onchange="updateTotal()">
                                     <span class="mr-2 font-semibold">حبة واحدة</span>
                                 </div>
                                 <span class="font-bold text-brand-dark">3,900 دج</span>
@@ -248,10 +268,10 @@ HTML_TEMPLATE = """
                             <hr class="border-brand-light my-2">
                             <label class="flex items-center justify-between cursor-pointer">
                                 <div class="flex items-center">
-                                    <input type="radio" name="offer" value="2 Packs" class="w-5 h-5 text-brand focus:ring-brand">
+                                    <input type="radio" name="offer" value="2 Packs" class="w-5 h-5 text-brand focus:ring-brand" onchange="updateTotal()">
                                     <span class="mr-2 font-semibold">حبتين (تخفيض)</span>
                                 </div>
-                                <span class="font-bold text-brand-dark">7,400 دج</span>
+                                <span class="font-bold text-brand-dark">7,5400 دج</span>
                             </label>
                         </div>
 
@@ -286,6 +306,23 @@ HTML_TEMPLATE = """
                             </div>
                         </div>
 
+                        <div id="orderSummary" class="hidden bg-gray-50 p-4 rounded-xl border border-gray-200 mt-4 space-y-2 text-sm">
+                            <div class="flex justify-between text-gray-600">
+                                <span>سعر المنتج:</span>
+                                <span id="productPriceDisplay" class="font-bold">3900 دج</span>
+                            </div>
+                            <div class="flex justify-between text-gray-600">
+                                <span>سعر التوصيل:</span>
+                                <span id="shippingPriceDisplay" class="font-bold">-- دج</span>
+                            </div>
+                            <div class="border-t border-gray-200 pt-2 flex justify-between text-brand-dark text-lg font-bold">
+                                <span>المجموع الكلي:</span>
+                                <span id="totalPriceDisplay">-- دج</span>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="final_total" id="final_total_input">
+
                         <button type="submit" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-4 rounded-xl shadow-lg mt-4 transition transform active:scale-95">
                             تأكيد الطلب
                         </button>
@@ -297,6 +334,13 @@ HTML_TEMPLATE = """
 
     <script>
         const locations = {{ locations | tojson }};
+        const shippingRates = {{ shipping_rates | tojson }};
+        
+        // Prices matching the Radio Buttons above
+        const prices = {
+            "1 Pack": 3900,
+            "2 Packs": 6500
+        };
 
         function changeImage(src) {
             document.getElementById('mainImage').src = src;
@@ -306,6 +350,8 @@ HTML_TEMPLATE = """
             const wilayaSelect = document.getElementById("wilaya");
             const communeSelect = document.getElementById("commune");
             const selectedWilaya = wilayaSelect.value;
+            
+            // 1. Logic for Communes
             communeSelect.innerHTML = '<option value="">اختر البلدية</option>';
             communeSelect.disabled = false;
 
@@ -319,6 +365,45 @@ HTML_TEMPLATE = """
             } else {
                 communeSelect.disabled = true;
             }
+
+            // 2. Trigger Price Calculation
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const wilayaSelect = document.getElementById("wilaya");
+            const summaryBox = document.getElementById("orderSummary");
+            
+            // Get selected product price
+            const selectedOffer = document.querySelector('input[name="offer"]:checked').value;
+            const productPrice = prices[selectedOffer];
+
+            // Get shipping price
+            let shippingPrice = 0;
+            if (wilayaSelect.value) {
+                // Extract code (e.g., "16" from "16 - Alger")
+                const code = wilayaSelect.value.split(" - ")[0];
+                shippingPrice = shippingRates[code] || 700; // Default 700 if error
+                
+                // Show the box if hidden
+                summaryBox.classList.remove("hidden");
+            }
+
+            // Calculate Total
+            const total = productPrice + shippingPrice;
+
+            // Update UI
+            document.getElementById("productPriceDisplay").innerText = productPrice + " دج";
+            
+            if (shippingPrice > 0) {
+                document.getElementById("shippingPriceDisplay").innerText = shippingPrice + " دج";
+                document.getElementById("totalPriceDisplay").innerText = total + " دج";
+                // Update hidden input for server
+                document.getElementById("final_total_input").value = total;
+            } else {
+                document.getElementById("shippingPriceDisplay").innerText = "اختر الولاية";
+                document.getElementById("totalPriceDisplay").innerText = "-- دج";
+            }
         }
     </script>
 </body>
@@ -327,7 +412,8 @@ HTML_TEMPLATE = """
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template_string(HTML_TEMPLATE, locations=LOCATIONS_DATA, seller_phone=SELLER_WHATSAPP)
+    # Pass Shipping Rates to HTML
+    return render_template_string(HTML_TEMPLATE, locations=LOCATIONS_DATA, seller_phone=SELLER_WHATSAPP, shipping_rates=SHIPPING_RATES)
 
 @app.route('/order', methods=['POST'])
 def order():
@@ -337,9 +423,12 @@ def order():
     wilaya = data.get('wilaya')
     commune = data.get('commune')
     offer = data.get('offer')
+    
+    # Get the calculated total from the hidden input
+    final_total = data.get('final_total')
 
-    # Construct WhatsApp URL
-    msg = f"سلام عليكم، أريد تأكيد طلبي:%0A👤 الاسم: {fullname}%0A📞 الهاتف: {phone}%0A📍 العنوان: {wilaya} - {commune}%0A📦 العرض: {offer}"
+    # Construct WhatsApp URL with Total Price
+    msg = f"سلام عليكم، أريد تأكيد طلبي:%0A👤 الاسم: {fullname}%0A📞 الهاتف: {phone}%0A📍 العنوان: {wilaya} - {commune}%0A📦 العرض: {offer}%0A💰 المجموع الكلي (مع التوصيل): {final_total} دج"
     wa_link = f"https://wa.me/{SELLER_WHATSAPP}?text={msg}"
 
     return f"""
@@ -354,7 +443,7 @@ def order():
         <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md mx-4">
             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🎉</div>
             <h1 class="text-2xl font-bold text-gray-800 mb-2">شكراً لك، {fullname}!</h1>
-            <p class="text-gray-600 mb-6">تم تسجيل طلبك. لتسريع عملية التوصيل، يرجى تأكيد العنوان عبر واتساب.</p>
+            <p class="text-gray-600 mb-6">تم تسجيل طلبك بقيمة إجمالية <strong>{final_total} دج</strong>.</p>
             
             <a href="{wa_link}" class="block w-full bg-[#25D366] hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:scale-105 flex items-center justify-center gap-2">
                 <span>تأكيد الطلب عبر واتساب</span>
@@ -369,5 +458,4 @@ def order():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 4300))
-
     app.run(debug=False, host='0.0.0.0', port=port)
