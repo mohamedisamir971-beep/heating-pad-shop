@@ -277,7 +277,7 @@ HTML_TEMPLATE = """
                                     <input type="radio" name="offer" value="2 Packs" class="w-5 h-5 text-brand focus:ring-brand" onchange="updateTotal()">
                                     <span class="mr-2 font-semibold">قطعتين (تخفيض)</span>
                                 </div>
-                                <span class="font-bold text-brand-dark">6,500 دج</span>
+                                <span class="font-bold text-brand-dark">7,400 دج</span>
                             </label>
                         </div>
 
