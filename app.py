@@ -7,19 +7,55 @@ app = Flask(__name__)
 # --- CONFIGURATION ---
 SELLER_WHATSAPP = "213541099824" 
 
-# --- 1. SHIPPING RATES (Based on 58 Wilayas) ---
+# --- 1. SHIPPING RATES (Updated from your Text Dump) ---
 SHIPPING_RATES = {
-    "16": 400, # Algiers
-    "9": 500, "2": 600, "42": 500, "35": 500, "15": 600, "6": 600, "19": 600, "25": 600, 
-    "31": 500, "13": 600, "21": 600, "23": 600, "46": 600, "27": 600, "44": 500, "10": 500,
-    "1": 1000, "3": 900, "8": 1000, "11": 1200, "30": 900, "33": 1200, "39": 900, "47": 900,
-    "50": 1200, "53": 1200, "54": 1200, "56": 1200, "58": 1000
+    # 550 DA
+    "19": 550,  # Setif
+
+    # 600 DA
+    "34": 600, "16": 600,
+
+    # 650 DA
+    "25": 650,
+
+    # 700 DA
+    "23": 700, "5": 700, "6": 700, "9": 700, "10": 700, "35": 700, "18": 700,
+    "28": 700, "42": 700, "15": 700, "2": 700, "31": 700,
+
+    # 800 DA
+    "40": 800, "26": 800, "43": 800, "4": 800, "21": 800, "44": 800, "27": 800,
+    "46": 800, "29": 800, "48": 800, "22": 800, "14": 800, "13": 800,
+
+    # 850 DA
+    "36": 850, "24": 850, "41": 850, "12": 850, "38": 850,
+
+    # 900 DA
+    "20": 900, "7": 900, "51": 900, "17": 900, "3": 900,
+
+    # 1000 DA
+    "39": 1000, "57": 1000, "47": 1000, "58": 1000, "30": 1000, "55": 1000,
+
+    # 1200 DA
+    "8": 1200, "52": 1200, "32": 1200, "45": 1200,
+
+    # 1500 DA
+    "1": 1500, "49": 1500,
+
+    # Special / Deep South
+    "37": 1700,  # Tindouf
+    "53": 1800,  # In Salah
+    "33": 1900,  # Illizi
+    "11": 2000,  # Tamanrasset
+    
+    # Missing from list (Deep South Defaults)
+    "50": 1800, "54": 1800, "56": 1800
 }
-# Default rate for others
+
+# Default for new Wilayas (59-69) or any missing codes
 for i in range(1, 70):
     code = str(i)
     if code not in SHIPPING_RATES:
-        SHIPPING_RATES[code] = 700
+        SHIPPING_RATES[code] = 900
 
 # --- 2. WILAYAS LIST ---
 WILAYAS = {
@@ -32,7 +68,7 @@ WILAYAS = {
     "59":"آفلو", "60":"الابيض سيدي الشيخ", "61":"العريشة", "62":"القنطرة", "63":"بريكة", "64":"بوسعادة", "65":"بئر العاتر", "66":"قصر البخاري", "67":"قصر الشلالة", "68":"عين وسارة", "69":"مسعد"
 }
 
-# --- 3. COMMUNES ---
+# --- 3. COMMUNES (Full List) ---
 RAW_COMMUNES = {
     "1": "أدرار,تامست,شاروين,رقان,إن زغمير,تيت,قصر قدور,تسabit,أقبلي,أولف,تيمقتن,فنوغيل,زاوية كنتة,بودة,أنزجمير",
     "2": "الشلف,تنس,بنايرية,الكريمية,تاوقريت,بني حواء,الصبحة,منزل,الوادى,اولاد فارس,الشطية,الابيض مجاجة,اولاد بن عبد القادر,تاجنة,الظهرة,المرسى,الحجاج,سيدي عكاشة,سيدي عبد الرحمن,بني راشد,مصدق,سيدي معروف,ام الدروع",
@@ -109,6 +145,7 @@ RAW_COMMUNES = {
 LOCATIONS_DATA = {}
 for code, name in WILAYAS.items():
     key = f"{code} - {name}"
+    # This prevents errors if a wilaya is missing from raw_communes
     communes_list = RAW_COMMUNES.get(code, "").split(',')
     LOCATIONS_DATA[key] = sorted(communes_list)
 
@@ -256,7 +293,7 @@ HTML_TEMPLATE = """
                                     <input type="radio" name="offer" value="2 Packs" class="w-5 h-5 text-brand focus:ring-brand" onchange="updateTotal()">
                                     <span class="mr-2 font-semibold">قطعتين (تخفيض)</span>
                                 </div>
-                                <span class="font-bold text-brand-dark">7,400 دج</span>
+                                <span class="font-bold text-brand-dark">6,500 دج</span>
                             </label>
                         </div>
 
@@ -359,9 +396,8 @@ HTML_TEMPLATE = """
             const wilayaSelect = document.getElementById("wilaya");
             
             // 1. Get Product Price
-            // We find the checked radio button
             const selectedOfferInput = document.querySelector('input[name="offer"]:checked');
-            if (!selectedOfferInput) return; // Safety check
+            if (!selectedOfferInput) return;
             
             const selectedOfferValue = selectedOfferInput.value;
             // Force Number conversion
@@ -375,12 +411,11 @@ HTML_TEMPLATE = """
                 // Extract the code (e.g. "16" from "16 - Alger")
                 const code = wilayaSelect.value.split(" - ")[0];
                 
-                // Lookup price (default to 700 if not found)
                 if (shippingRates[code]) {
                     // Force Number conversion
                     shippingPrice = Number(shippingRates[code]);
                 } else {
-                    shippingPrice = 700;
+                    shippingPrice = 900; // Default
                 }
             }
 
@@ -400,57 +435,9 @@ HTML_TEMPLATE = """
                 document.getElementById("totalPriceDisplay").innerText = "-- دج";
             }
         }
+        
+        // Run once on load to set initial state
+        window.onload = updateTotal;
     </script>
 </body>
 </html>
-"""
-
-@app.route('/', methods=['GET'])
-def index():
-    # Pass Shipping Rates to the template
-    return render_template_string(HTML_TEMPLATE, locations=LOCATIONS_DATA, seller_phone=SELLER_WHATSAPP, shipping_rates=SHIPPING_RATES)
-
-@app.route('/order', methods=['POST'])
-def order():
-    data = request.form
-    fullname = data.get('fullname')
-    phone = data.get('phone')
-    wilaya = data.get('wilaya')
-    commune = data.get('commune')
-    offer = data.get('offer')
-    
-    # Get the calculated total from the hidden input
-    final_total = data.get('final_total')
-
-    # WhatsApp Message
-    msg = f"سلام عليكم، أريد تأكيد طلبي:%0A👤 الاسم: {fullname}%0A📞 الهاتف: {phone}%0A📍 العنوان: {wilaya} - {commune}%0A📦 العرض: {offer}%0A💰 المجموع الكلي: {final_total} دج"
-    wa_link = f"https://wa.me/{SELLER_WHATSAPP}?text={msg}"
-
-    return f"""
-    <html dir="rtl">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    </head>
-    <body class="bg-gray-50 flex items-center justify-center min-h-screen font-[Cairo]">
-        <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md mx-4">
-            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🎉</div>
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">شكراً لك، {fullname}!</h1>
-            <p class="text-gray-600 mb-6">تم تسجيل طلبك بقيمة <strong>{final_total} دج</strong>. لتسريع عملية التوصيل، يرجى تأكيد العنوان عبر واتساب.</p>
-            
-            <a href="{wa_link}" class="block w-full bg-[#25D366] hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:scale-105 flex items-center justify-center gap-2">
-                <span>تأكيد الطلب عبر واتساب</span>
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-            </a>
-            
-            <a href="/" class="block mt-4 text-gray-400 text-sm">العودة للصفحة الرئيسية</a>
-        </div>
-    </body>
-    </html>
-    """
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 4300))
-    app.run(debug=False, host='0.0.0.0', port=port)
